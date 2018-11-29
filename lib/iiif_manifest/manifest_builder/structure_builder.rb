@@ -59,7 +59,7 @@ module IIIFManifest
 
       def build_range
         range['@id'] = path
-        range['label'] = record.label
+        range['label'] = ::Loofah.scrub_fragment(record.label, ::IIIFManifest::Scrubbers::EscapeAll.new).to_s
         range['viewingHint'] = 'top' if top?
         range['ranges'] = sub_ranges.map(&:path)
         range['canvases'] = canvas_builders.map(&:path)

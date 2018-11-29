@@ -12,4 +12,5 @@ module IIIFManifest
   autoload :IIIFCollection
   autoload :IIIFEndpoint
   autoload :V3
+  autoload :Scrubbers
 end

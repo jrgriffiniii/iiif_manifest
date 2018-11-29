@@ -1,3 +1,5 @@
+require 'loofah'
+
 module IIIFManifest
   class ManifestBuilder
     class RecordPropertyBuilder
@@ -10,11 +12,11 @@ module IIIFManifest
 
       def apply(manifest)
         manifest['@id'] = record.manifest_url.to_s
-        manifest.label = record.to_s
-        manifest.description = record.description
+        manifest.label = ::Loofah.scrub_fragment(record.to_s, ::IIIFManifest::Scrubbers::EscapeAll.new).to_s
+        manifest.description = ::Loofah.scrub_fragment(record.description, :prune).to_s
         manifest.viewing_hint = viewing_hint if viewing_hint.present?
         manifest.viewing_direction = viewing_direction if viewing_direction.present?
-        manifest.metadata = record.manifest_metadata if valid_metadata?
+        manifest.metadata = record.manifest_metadata.map {|k,v| ::Loofah.scrub_fragment(v, :prune).to_s } if valid_metadata?
         manifest.service = services if search_service.present?
         manifest
       end

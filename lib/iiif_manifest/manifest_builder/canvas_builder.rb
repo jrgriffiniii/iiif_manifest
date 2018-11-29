@@ -34,7 +34,7 @@ module IIIFManifest
 
         def apply_record_properties
           canvas['@id'] = path
-          canvas.label = record.to_s
+          canvas.label = ::Loofah.scrub_fragment(record.to_s, ::IIIFManifest::Scrubbers::EscapeAll.new).to_s
         end
 
         def attach_image
