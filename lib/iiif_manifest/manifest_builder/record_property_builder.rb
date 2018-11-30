@@ -16,7 +16,7 @@ module IIIFManifest
         manifest.description = ::Loofah.scrub_fragment(record.description, :prune).to_s
         manifest.viewing_hint = viewing_hint if viewing_hint.present?
         manifest.viewing_direction = viewing_direction if viewing_direction.present?
-        manifest.metadata = record.manifest_metadata.map {|k,v| ::Loofah.scrub_fragment(v, :prune).to_s } if valid_metadata?
+        manifest.metadata = sanitize_metadata(record.manifest_metadata) if valid_metadata?
         manifest.service = services if search_service.present?
         manifest
       end
@@ -82,6 +82,17 @@ module IIIFManifest
         # @return [Boolean]
         def valid_metadata_content?(metadata)
           metadata.all? { |v| v['label'].present? && v['value'].present? }
+        end
+
+        def sanitize_metadata(metadata)
+          sanitized_metadata = []
+          metadata.each do |v|
+            metadata_value = {}
+            metadata_value['label'] = ::Loofah.scrub_fragment(v['label'], ::IIIFManifest::Scrubbers::EscapeAll.new).to_s
+            metadata_value['value'] = ::Loofah.scrub_fragment(v['value'], :prune).to_s
+            sanitized_metadata << metadata_value
+          end
+          sanitized_metadata
         end
     end
   end

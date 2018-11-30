@@ -11,18 +11,17 @@ module IIIFManifest
         return CONTINUE if sanitize_all(node) == CONTINUE
         node.add_next_sibling Nokogiri::XML::Text.new(node.to_s, node.document)
         node.remove
-        return STOP
+        STOP
       end
 
       private
 
         def sanitize_all(node)
-          case node.type
-          when Nokogiri::XML::Node::ELEMENT_NODE
-          when Nokogiri::XML::Node::TEXT_NODE, Nokogiri::XML::Node::CDATA_SECTION_NODE
-            return ::Loofah::Scrubber::CONTINUE
+          if node.type == Nokogiri::XML::Node::TEXT_NODE || node.type == Nokogiri::XML::Node::CDATA_SECTION_NODE
+            CONTINUE
+          else
+            STOP
           end
-          ::Loofah::Scrubber::STOP
         end
     end
   end

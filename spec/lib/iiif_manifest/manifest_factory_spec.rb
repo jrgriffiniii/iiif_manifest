@@ -337,42 +337,57 @@ RSpec.describe IIIFManifest::ManifestFactory do
     end
 
     context 'sanitizing HTML markup' do
+      let(:b_tag) { "<b>Samvera</b>" }
+      let(:escaped_b_tag) { "&lt;b&gt;Samvera&lt;/b&gt;" }
+      let(:illegal_img_tag) { "<img src=xx:x onerror=eval('\x61ler\x74(1)') />" }
+      let(:pruned_img_tag) { "<img>" }
+      let(:structure_with_html) do
+        [
+          ManifestRange.new(label: '<b>Table of Contents</b>', ranges: [
+                              ManifestRange.new(label: '<span>Chapter 1</span>', file_set_presenters: [])
+                            ])
+        ]
+      end
+      let(:metadata_with_html) do
+        [
+          { "label" => "Title", "value" => illegal_img_tag },
+          { "label" => "Creator", "value" => b_tag }
+        ]
+      end
+
       it 'escapes all HTML markup from label' do
-        allow(book_presenter).to receive(:to_s).and_return("<b>hi</b>")
-        expect(result.label).to eq "&lt;b&gt;hi&lt;/b&gt;"
+        allow(book_presenter).to receive(:to_s).and_return(b_tag)
+        expect(result.label).to eq escaped_b_tag
       end
 
       it 'escapes all HTML markup from canvas labels' do
-        file_presenter = DisplayImagePresenter.new(label: "<b>hi</b>")
+        file_presenter = DisplayImagePresenter.new(label: b_tag)
         allow(book_presenter).to receive(:file_set_presenters).and_return([file_presenter])
         sequence = result['sequences'].first
         canvas = sequence['canvases'].first
-        expect(canvas['label']).to eq "&lt;b&gt;hi&lt;/b&gt;"
+        expect(canvas['label']).to eq escaped_b_tag
       end
 
       it 'escapes all HTML markup from structure labels' do
-        file_presenter = DisplayImagePresenter.new(label: "<b>hi</b>")
+        file_presenter = DisplayImagePresenter.new(label: b_tag)
         allow(book_presenter).to receive(:file_set_presenters).and_return([file_presenter])
-        allow(book_presenter).to receive(:ranges).and_return([
-          ManifestRange.new(label: '<b>Table of Contents</b>', ranges: [
-            ManifestRange.new(label: '<span>Chapter 1</span>', file_set_presenters: [])
-          ])
-        ])
+        allow(book_presenter).to receive(:ranges).and_return(structure_with_html)
         allow(book_presenter.ranges[0].ranges[0]).to receive(:file_set_presenters).and_return([file_presenter])
         structure = result['structures'].first
         expect(structure['label']).to eq '&lt;b&gt;Table of Contents&lt;/b&gt;'
         sub_range = result['structures'].last
         expect(sub_range['label']).to eq '&lt;span&gt;Chapter 1&lt;/span&gt;'
-        puts result.to_json
       end
 
       it 'prunes unsafe HTML markup from description' do
-        allow(book_presenter).to receive(:description).and_return("<img src=xx:x onerror=eval('\x61ler\x74(1)') />")
-        expect(result.label).to eq ""
+        allow(book_presenter).to receive(:description).and_return(illegal_img_tag)
+        expect(result.label).to eq pruned_img_tag
       end
 
       it 'prunes unsafe HTML markup from metadata' do
-
+        allow(book_presenter).to receive(:manifest_metadata).and_return(metadata_with_html)
+        expect(result["metadata"][0]["value"]).to eq pruned_img_tag
+        expect(result["metadata"][1]["value"]).to eq b_tag
       end
     end
   end
